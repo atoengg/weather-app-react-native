@@ -1,26 +1,46 @@
-import { StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { WeatherInfo } from './src/components/WeatherInfo';
 import { WeatherSearch } from './src/components/WeatherSearch';
-import axios from 'axios';
-import { API_KEY, BASE_URL } from './src/constant';
+import { useState } from 'react';
+import { searchWeather } from './src/service';
+
 export default function App() {
 
-  const searchWeather = (location) => {
-    axios
-    .get(`${BASE_URL}?q=${location}&appid=${API_KEY}`)
-    .then((response) => {
-      const data = response.data
-      console.log(data);
-    })
-    .catch((error) => {
-      console.log(error);
-    })
+  const [weatherData, setWeatherData] = useState()
+  const [status, setStatus] = useState('')
+
+  const handleSearchWeather = async (location) => {
+    setStatus('loading')
+    try {
+      const data = await searchWeather(location)
+      setWeatherData(data)
+      setStatus('success')
+    } catch (error) {
+      setStatus('error')
+    }
+  }
+
+  const renderComponent = () => {
+    switch (status) {
+      case 'loading':
+        return <ActivityIndicator size="large" />
+      case 'success':
+        return <WeatherInfo weatherData={weatherData} />
+      case 'error':
+        return (
+          <Text>
+            Something went wrong. Please try again with a correct city name.
+          </Text>
+        )
+      default:
+        return
+    }
   }
 
   return (
     <View style={styles.container}>
-      <WeatherSearch searchWeather={searchWeather} />
-      <WeatherInfo />
+      <WeatherSearch searchWeather={handleSearchWeather} />
+      <View style={styles.marginTop20}>{renderComponent()}</View>
     </View>
   );
 }
